@@ -1,4 +1,4 @@
 # quaternions
-Library for dealing with quaternions. Based on github.com/satellogic/quaternions.
+Library for dealing with quaternions. Based on [quaternions by Satellogic](https://github.com/satellogic/quaternions).
 
 _ToDo_
