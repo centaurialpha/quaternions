@@ -1,5 +1,7 @@
-use std::ops::{Add, Div, Mul};
 use std::fmt::Display;
+use std::ops::{Add, Div, Mul};
+
+pub static DEFAULT_TOLERANCE: f64 = 1e-8;
 
 #[derive(Debug)]
 pub struct Quaternion {
@@ -14,23 +16,22 @@ impl Quaternion {
         Self { qr, qi, qj, qk }
     }
 
-    fn real(&self) -> f64 {
+    pub fn real(&self) -> f64 {
         self.qr
     }
 
-    fn imaginary(&self) -> (f64, f64, f64) {
+    pub fn imaginary(&self) -> (f64, f64, f64) {
         (self.qi, self.qj, self.qk)
     }
-    fn square_norm(&self) -> f64 {
+    pub fn square_norm(&self) -> f64 {
         self.qr * self.qr + self.qi * self.qi + self.qj * self.qj + self.qk * self.qk
     }
 
-    fn conjugate(&self) -> Self {
+    pub fn conjugate(&self) -> Self {
         Quaternion::new(self.qr, -self.qi, -self.qj, -self.qk)
     }
 
-    fn inverse(&self) -> Self {
-        // FIXME: pfffffffff
+    pub fn inverse(&self) -> Self {
         let q_conjugate = self.conjugate();
         let inverse_scalar = 1.0 / self.square_norm();
 
@@ -41,6 +42,21 @@ impl Quaternion {
             q_conjugate.qk * inverse_scalar,
         )
     }
+    pub fn norm(&self) -> f64 {
+        self.square_norm().sqrt()
+    }
+
+    pub fn normalized(&self) -> Quaternion {
+        let norm = self.norm();
+        Quaternion {
+            qr: self.qr / norm,
+            qi: self.qi / norm,
+            qj: self.qj / norm,
+            qk: self.qk / norm,
+        }
+    }
+
+    #[allow(dead_code)]
     fn round(mut self, decimals: usize) -> Self {
         let factor = 10_f64.powi(decimals as i32);
         self.qr = (self.qr * factor).round() / factor;
@@ -65,7 +81,7 @@ impl Add for Quaternion {
 
 impl Display for Quaternion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-       write!(f, "{}{:+}i{:+}j{:+}k", self.qr, self.qi, self.qj, self.qk) 
+        write!(f, "{}{:+}i{:+}j{:+}k", self.qr, self.qi, self.qj, self.qk)
     }
 }
 impl Mul for Quaternion {
@@ -105,48 +121,73 @@ impl PartialEq for Quaternion {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
-    fn new_quaternion() {
-        let q = Quaternion::new(1.0, 1.1, 0.33, 0.1);
-        let qk = q.qk;
-        let qr = q.qr;
-        let qi = q.qi;
-        let qj = q.qj;
-        assert_eq!(qk, 0.1);
-        assert_eq!(qi, 1.1);
-        assert_eq!(qr, 1.0);
-        assert_eq!(qj, 0.33);
+    fn test_new() {
+        let expected = Quaternion {
+            qr: 1.0,
+            qi: 2.0,
+            qj: 3.0,
+            qk: 4.0,
+        };
+        let result = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+        assert_eq!(expected, result);
     }
     #[test]
-    fn real() {
+    fn test_real() {
         let q = Quaternion::new(0.23, 0.0, 0.0, 0.0);
         assert_eq!(q.real(), 0.23);
     }
     #[test]
-    fn imaginary() {
+    fn test_imaginary() {
         let q = Quaternion::new(0.23, 0.2, 0.1, 0.5);
         let i = (0.2, 0.1, 0.5);
         assert_eq!(q.imaginary(), i);
     }
     #[test]
-    fn add() {
-        let q1 = Quaternion::new(0.1, 0.2, 0.3, 0.4);
-        let q2 = Quaternion::new(0.0, 0.3, 0.1, 0.2);
-        assert_eq!(q1 + q2, Quaternion::new(0.1, 0.5, 0.4, 0.6000000000000001));
+    fn test_add() {
+        let q1 = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+        let q2 = Quaternion::new(0.5, 0.5, 0.5, 0.5);
+        let expected = Quaternion::new(1.5, 2.5, 3.5, 4.5);
+        let result = q1 + q2;
+        assert_eq!(expected, result);
     }
     #[test]
-    fn conjugate() {
-        let q = Quaternion::new(0.1, 0.2, 0.3, 0.3);
-        let q_conjugate = q.conjugate();
-        let q_expected = Quaternion::new(0.1, -0.2, -0.3, -0.3);
-        assert_eq!(q_conjugate, q_expected);
-    }
-    #[test]
-    fn inverse() {
+    fn test_conjugate() {
         let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
-        let q_inverse = q.inverse();
-        let q_expected = Quaternion::new(0.03, -0.07, -0.1, -0.13);
-        assert_eq!(q_inverse.round(2), q_expected);
+        let expected = Quaternion::new(1.0, -2.0, -3.0, -4.0);
+        let result = q.conjugate();
+        assert_eq!(expected, result);
+    }
+    #[test]
+    fn test_inverse() {
+        let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+        let expected = Quaternion::new(
+            0.03333333333333333,
+            -0.06666666666666667,
+            -0.1,
+            -0.13333333333333333,
+        );
+        let result = q.inverse();
+        assert_eq!(expected, result);
+    }
+    #[test]
+    fn test_norm() {
+        let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+        let expected = (30.0 as f64).sqrt();
+        let result = q.norm();
+        assert_eq!(expected, result);
+    }
+    #[test]
+    fn test_normalized() {
+        let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
+        let normalized_q = q.normalized();
+        let expected_norm = 1.0;
+        let actual_norm = normalized_q.norm();
+        assert!(
+            (expected_norm - actual_norm).abs() < DEFAULT_TOLERANCE,
+            "The norm of the normalized quaternion is {} but {} was expected.",
+            actual_norm,
+            expected_norm
+        );
     }
 }
