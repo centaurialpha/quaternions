@@ -1,4 +1,5 @@
 use std::ops::{Add, Div, Mul};
+use std::fmt::Display;
 
 #[derive(Debug)]
 pub struct Quaternion {
@@ -9,7 +10,7 @@ pub struct Quaternion {
 }
 
 impl Quaternion {
-    fn new(qr: f64, qi: f64, qj: f64, qk: f64) -> Self {
+    pub fn new(qr: f64, qi: f64, qj: f64, qk: f64) -> Self {
         Self { qr, qi, qj, qk }
     }
 
@@ -62,6 +63,11 @@ impl Add for Quaternion {
     }
 }
 
+impl Display for Quaternion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+       write!(f, "{}{:+}i{:+}j{:+}k", self.qr, self.qi, self.qj, self.qk) 
+    }
+}
 impl Mul for Quaternion {
     type Output = Quaternion;
     fn mul(self, other: Quaternion) -> Quaternion {
