@@ -40,6 +40,14 @@ impl Quaternion {
             q_conjugate.qk * inverse_scalar,
         )
     }
+    fn round(mut self, decimals: usize) -> Self {
+        let factor = 10_f64.powi(decimals as i32);
+        self.qr = (self.qr * factor).round() / factor;
+        self.qi = (self.qi * factor).round() / factor;
+        self.qj = (self.qj * factor).round() / factor;
+        self.qk = (self.qk * factor).round() / factor;
+        self
+    }
 }
 
 impl Add for Quaternion {
@@ -132,12 +140,7 @@ mod tests {
     fn inverse() {
         let q = Quaternion::new(1.0, 2.0, 3.0, 4.0);
         let q_inverse = q.inverse();
-        let q_expected = Quaternion::new(
-            0.18257418583505539,
-            -0.36514837167011077,
-            -0.5477225575051662,
-            -0.7302967433402215,
-        );
-        assert_eq!(q_inverse, q_expected);
+        let q_expected = Quaternion::new(0.03, -0.07, -0.1, -0.13);
+        assert_eq!(q_inverse.round(2), q_expected);
     }
 }
